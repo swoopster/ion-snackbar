@@ -1,6 +1,6 @@
 // (c) 2016 Flavio Colonna Romano
 // This code is licensed under MIT license (see license.txt for details)
-angular.module("snackbar", ['ngAnimate']).service('$snackbar', function($http, $log, $animate, $q) {
+angular.module("snackbar", ['ngAnimate']).service('$snackbar', ['$http', '$log', '$animate', '$q', function($http, $log, $animate, $q) {
   var timeout = {};
   var template = $http({
     method: 'GET',
@@ -80,4 +80,4 @@ angular.module("snackbar", ['ngAnimate']).service('$snackbar', function($http, $
     angular.element(wrapper).triggerHandler('snackbar-closed');
     angular.element(wrapper).removeClass("active");
   };
-})
+}]);
