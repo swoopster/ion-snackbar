@@ -18,6 +18,7 @@ angular.module("snackbar", ['ngAnimate']).service('$snackbar', ['$http', '$log',
   this.show = function(options) {
     return $q(function(resolve, reject) {
       clearTimeout(timeout);
+      template.then(function(res) {
       var wrapper = document.getElementsByClassName("snackbar-wrapper");
       $animate.removeClass(wrapper[0], "active").then(function() {
         if (!options.message) {
@@ -44,7 +45,6 @@ angular.module("snackbar", ['ngAnimate']).service('$snackbar', ['$http', '$log',
             default:
                 timeMs = 3000;
         }
-        template.then(function(res) {
           angular.element(document.getElementsByClassName("snackbar-btn")).remove();
           if(buttonName && buttonName.length > 0) {
             var button = angular.element(document.createElement("a"));
@@ -58,7 +58,7 @@ angular.module("snackbar", ['ngAnimate']).service('$snackbar', ['$http', '$log',
           angular.element(wrapper).find('span').text(options.message);
           angular.element(wrapper).find('span').css('color', messageColor);
           angular.element(wrapper).addClass("active");
-        });
+
         if(timeMs > 0){
             timeout = setTimeout(function() {
               angular.element(wrapper).removeClass("active");
@@ -71,6 +71,7 @@ angular.module("snackbar", ['ngAnimate']).service('$snackbar', ['$http', '$log',
                 }
             })
         }
+        });
       });
     });
   };
