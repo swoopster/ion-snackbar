@@ -1,11 +1,18 @@
 // (c) 2016 Flavio Colonna Romano
 // This code is licensed under MIT license (see license.txt for details)
-angular.module("snackbar", ['ngAnimate']).service('$snackbar', ['$http', '$log', '$animate', '$q', function($http, $log, $animate, $q) {
+angular.module("snackbar", ['ngAnimate']).service('$snackbar', ['$http', '$log', '$animate', '$q', '$templateCache', function($http, $log, $animate, $q, $templateCache) {
   var timeout = {};
-  var template = $http({
-    method: 'GET',
-    url: './snackbar.html'
-  }).then(function(result) {
+    var template = $templateCache.get('snackbar.html');
+    var templatePromise = null;
+    if(typeof template === 'undefined'){
+        templatePromise = $http({
+            method: 'GET',
+            url: './snackbar.html'
+        })
+    }else{
+        templatePromise = $q.resolve({data: template});
+    }
+    template = templatePromise.then(function(result) {
     var body = document.getElementsByTagName("body")[0];
     var previousSnackbar = document.getElementsByClassName('snackbar-wrapper');
     if (previousSnackbar.length == 0) {
@@ -26,10 +33,32 @@ angular.module("snackbar", ['ngAnimate']).service('$snackbar', ['$http', '$log',
           reject("Message in the snackbar not defined");
           return;
         }
-        var buttonName = options.buttonName ? options.buttonName.trim() : false;
-        var buttonFunction = options.buttonFunction ? options.buttonFunction : this.hide;
-        var buttonColor = options.buttonColor ? options.buttonColor : '#a1c2fa';
+
         var messageColor = options.messageColor ? options.messageColor : 'white';
+        var buttons = [];
+        if(options.buttons && options.buttons instanceof Array){
+            for(var i = 0; i < options.buttons.length; i++){
+                buttons.push(
+                    createButton(
+                        options.buttons[i].name,
+                        options.buttons[i].color,
+                        options.buttons[i].callback
+                    )
+                );
+            }
+
+        }else{
+            //backwards compatibility
+            buttons.push(
+                createButton(
+                    options.buttonName,
+                    options.buttonColor ,
+                    options.buttonFunction
+                )
+            );
+        }
+
+
         var time = options.time ? options.time : 'SHORT';
         var timeMs;
         switch(time) {
@@ -46,15 +75,15 @@ angular.module("snackbar", ['ngAnimate']).service('$snackbar', ['$http', '$log',
                 timeMs = 3000;
         }
           angular.element(document.getElementsByClassName("snackbar-btn")).remove();
-          if(buttonName && buttonName.length > 0) {
-            var button = angular.element(document.createElement("a"));
-            button.addClass("snackbar-btn")
-            button.text(buttonName);
-            button.css('color', buttonColor);
-            button.bind("click", buttonFunction)
-            var content = document.getElementsByClassName("snackbar-content");
-            angular.element(content).append(button)
-          }
+          var content = document.getElementsByClassName("snackbar-content");
+
+          buttons.forEach(function(
+            button
+          ){
+              content[0].appendChild(button);
+          })
+
+
           angular.element(wrapper).find('span').text(options.message);
           angular.element(wrapper).find('span').css('color', messageColor);
           angular.element(wrapper).addClass("active");
@@ -75,10 +104,24 @@ angular.module("snackbar", ['ngAnimate']).service('$snackbar', ['$http', '$log',
       });
     });
   };
-  this.hide = function() {
-    clearTimeout(timeout);
-    var wrapper = document.getElementsByClassName("snackbar-wrapper");
-    angular.element(wrapper).triggerHandler('snackbar-closed');
-    angular.element(wrapper).removeClass("active");
-  };
+  this.hide = hide;
+
+  function hide() {
+      clearTimeout(timeout);
+      var wrapper = document.getElementsByClassName("snackbar-wrapper");
+      angular.element(wrapper).triggerHandler('snackbar-closed');
+      angular.element(wrapper).removeClass("active");
+  }
+
+  function createButton(name, color, callback)
+  {
+      var button = document.createElement("a");
+
+      button.classList.add("snackbar-btn");
+      button.text = name ? name.trim() : false;
+      button.style.color = color ? color : '#a1c2fa';
+      button.addEventListener('click', callback ? callback : hide);
+
+      return button;
+  }
 }]);
